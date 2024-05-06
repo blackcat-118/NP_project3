@@ -30,7 +30,7 @@ void Parser(string http_req) {
   size_t indx = parsed_req[1].find_first_of('?');
   string query = "";
   if (indx != string::npos) {
-    service_name = parsed_req[1].substr(1, indx);
+    service_name = parsed_req[1].substr(1, indx-1);
     query = parsed_req[1].substr(indx+1);
   }
   else {
