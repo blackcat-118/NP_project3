@@ -25,8 +25,8 @@ void Parser(string http_req) {
   for (unsigned int i = 0; i < parsed_req.size(); i++) {
     //cout << parsed_req[i] << endl;
   }
-  env_vars.push_back(pair<string, string>("REQUEST_METHOD", parsed_req[0]));
-  env_vars.push_back(pair<string, string>("REQUEST_URI", parsed_req[1]));
+  env_vars[0].second = parsed_req[0];
+  env_vars[1].second = parsed_req[1];
   size_t indx = parsed_req[1].find_first_of('?');
   string query = "";
   if (indx != string::npos) {
@@ -37,9 +37,9 @@ void Parser(string http_req) {
     service_name = parsed_req[1].substr(1);
     //cout << service_name << endl;
   }
-  env_vars.push_back(pair<string, string>("QUERY_STRING", query));
-  env_vars.push_back(pair<string, string>("SERVER_PROTOCOL", parsed_req[2]));
-  env_vars.push_back(pair<string, string>("HTTP_HOST", parsed_req[4]));
+  env_vars[2].second = query;
+  env_vars[3].second = parsed_req[2];
+  env_vars[4].second = parsed_req[4];
   
   return;
 }
@@ -68,10 +68,10 @@ private:
           if (!ec)
           {
             Parser(string(data_));
-            env_vars.push_back(pair<string, string>("SERVER_ADDR", socket_.local_endpoint().address().to_string()));
-            env_vars.push_back(pair<string, string>("SERVER_PORT", to_string(socket_.local_endpoint().port())));
-            env_vars.push_back(pair<string, string>("REMOTE_ADDR", socket_.remote_endpoint().address().to_string()));
-            env_vars.push_back(pair<string, string>("REMOTE_PORT", to_string(socket_.remote_endpoint().port())));
+            env_vars[5].second = socket_.local_endpoint().address().to_string();
+            env_vars[6].second = to_string(socket_.local_endpoint().port());
+            env_vars[7].second = socket_.remote_endpoint().address().to_string();
+            env_vars[8].second = to_string(socket_.remote_endpoint().port());
             
             int childpid = fork();
             if (childpid == 0) {
@@ -159,6 +159,17 @@ int main(int argc, char* argv[])
       std::cerr << "Usage: async_tcp_echo_server <port>\n";
       return 1;
     }
+
+    // set env
+    env_vars.push_back(pair<string, string>("REQUEST_METHOD", ""));
+    env_vars.push_back(pair<string, string>("REQUEST_URI", ""));
+    env_vars.push_back(pair<string, string>("QUERY_STRING", ""));
+    env_vars.push_back(pair<string, string>("SERVER_PROTOCOL", ""));
+    env_vars.push_back(pair<string, string>("HTTP_HOST", ""));
+    env_vars.push_back(pair<string, string>("SERVER_ADDR", ""));
+    env_vars.push_back(pair<string, string>("SERVER_PORT", ""));
+    env_vars.push_back(pair<string, string>("REMOTE_ADDR", ""));
+    env_vars.push_back(pair<string, string>("REMOTE_PORT", ""));
 
     boost::asio::io_context io_context;
 
