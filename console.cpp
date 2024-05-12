@@ -133,9 +133,8 @@ private:
         char cmd[20480] = "";
         if (fin.getline(cmd, 20480)) {
             cmd[strlen(cmd)] = '\n';
-            cmd[strlen(cmd)] = '\0';
             cout << "<script>document.getElementById(\"s" << sid << "\").innerHTML += \'" << do_replace(cmd, 0) << "\';</script>" << endl;
-            socket_.async_write_some(boost::asio::buffer(cmd, strlen(cmd)), 
+            boost::asio::async_write(socket_, boost::asio::buffer(cmd, strlen(cmd)), 
             [this](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
                     do_read();
