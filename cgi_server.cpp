@@ -12,7 +12,7 @@ using namespace std;
 
 string panel();
 string console_temp(string);
-void console();
+void console(boost::asio::ip::tcp::socket&);
 
 string do_replace(string s, int length) {
     string s1;
@@ -96,7 +96,7 @@ private:
                     do_write(out, out.length());
                     out = console_temp(env_vars[2].second);
                     do_write(out, out.length());
-                    console();
+                    console(socket_);
                 }
                 else {
                     memset(data_, '\0', max_length);
@@ -151,7 +151,9 @@ private:
     char data_[max_length];
     string service_name;
     vector<pair<string, string>> env_vars;
-    class mysession {
+};
+
+class mysession {
 public:
     string host = "";
     string port = "";
@@ -160,7 +162,8 @@ public:
 
 class client {
 public:
-    client(int sid, string host, string port, string file, boost::asio::io_context& io_context): sid(sid), host(host), port(port), file(file), resolver_(io_context), socket_(io_context){}
+    client(int sid, string host, string port, string file, boost::asio::io_context& io_context, boost::asio::ip::tcp::socket& session_socket_)
+    : sid(sid), host(host), port(port), file(file), resolver_(io_context), socket_(io_context), session_socket_(session_socket_){}
 
     void start() {
         boost::asio::ip::tcp::resolver::query query_(host, port);
@@ -199,8 +202,8 @@ private:
         socket_.async_read_some(boost::asio::buffer(data_, max_length), 
         [this](boost::system::error_code ec, std::size_t length) {
             if (!ec) {
-                cout << "<script>document.getElementById(\"s" << sid << "\").innerHTML += \'<b>" << do_replace(data_, length) << "</b>\';</script>" << endl;
-                
+                string out = "<script>document.getElementById(\"s" + to_string(sid) + "\").innerHTML += \'<b>" + do_replace(data_, length) + "</b>\';</script>\n";
+                do_session_write(out);
                 if (strstr(data_, "% ") != NULL) {
                     memset(data_, '\0', 20480);
                     do_write();
@@ -216,7 +219,8 @@ private:
         char cmd[20480] = "";
         if (fin.getline(cmd, 20480)) {
             cmd[strlen(cmd)] = '\n';
-            cout << "<script>document.getElementById(\"s" << sid << "\").innerHTML += \'" << do_replace(cmd, 0) << "\';</script>" << endl;
+            string out = "<script>document.getElementById(\"s" + to_string(sid) + "\").innerHTML += \'" + do_replace(cmd, 0) + "\';</script>\n";
+            do_session_write(out);
             boost::asio::async_write(socket_, boost::asio::buffer(cmd, strlen(cmd)), 
             [this](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
@@ -229,6 +233,16 @@ private:
             socket_.close();
         }
     }
+    void do_session_write(string out) {
+        boost::asio::async_write(session_socket_, boost::asio::buffer(out.data(), out.length()),
+        [this](boost::system::error_code ec, std::size_t length) {
+            if (!ec) {
+
+            }
+        });
+
+    }
+    
 
     int sid;
     string host = "";
@@ -238,10 +252,11 @@ private:
     boost::asio::ip::tcp::resolver resolver_;
     boost::asio::ip::tcp::resolver::results_type endpoint_;
     boost::asio::ip::tcp::socket socket_;
+    boost::asio::ip::tcp::socket& session_socket_;
     enum { max_length = 20480 };
 	char data_[max_length];
 };
-};
+
 
 class server
 {
@@ -278,7 +293,7 @@ string panel() {
     for (int i = 1; i < 6; i++) {
         testcase_menu += "<option value=\"{f" + to_string(i) + ".txt" + "}\">" + "f" + to_string(i) + ".txt" + "</option>";
     }
-    string domain_name = "cs.nycu.edu.tw";
+    string domain_name = ".cs.nycu.edu.tw";
     string host_menu = "";
     for (int i = 1; i < 13; i++) {
         host_menu += "<option value=\"nplinux" + to_string(i) + domain_name + "\">" + "nplinux" + to_string(i) + "</option>";
@@ -453,18 +468,20 @@ string console_temp(string requests) {
     return response;
 }
 
-void console() {
+void console(boost::asio::ip::tcp::socket& socket_) {
     boost::asio::io_context io_context;
     for (int i = 0; i < 5; i++) {
         if (session_list[i].host == "") {
             continue;
         }
-        client* c = new client(i, session_list[i].host, session_list[i].port, session_list[i].file, io_context);
+        client* c = new client(i, session_list[i].host, session_list[i].port, session_list[i].file, io_context, socket_);
         c->start();
     }
     io_context.run();
     return;
 }
+
+
 
 int main(int argc, char* argv[]) {
     try {
