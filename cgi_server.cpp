@@ -186,7 +186,7 @@ private:
         [this](boost::system::error_code ec) {
             if (!ec) {
                 if (file != "") {
-                    file = "test_case/" + file;
+                    file = ".\\test_case\\" + file;
                     fin = ifstream(file.data());
                 }
                 memset(data_, '\0', 20480);
@@ -240,9 +240,7 @@ private:
 
             }
         });
-
     }
-    
 
     int sid;
     string host = "";
@@ -291,7 +289,7 @@ string panel() {
 
     string testcase_menu = "";
     for (int i = 1; i < 6; i++) {
-        testcase_menu += "<option value=\"{f" + to_string(i) + ".txt" + "}\">" + "f" + to_string(i) + ".txt" + "</option>";
+        testcase_menu += "<option value=\"t" + to_string(i) + ".txt" + "\">" + "t" + to_string(i) + ".txt" + "</option>";
     }
     string domain_name = ".cs.nycu.edu.tw";
     string host_menu = "";
@@ -305,19 +303,19 @@ string panel() {
     response += "<head>";
     response += "<title>NP Project 3 Panel</title>";
     response += "<link";
-    response += "rel=\"stylesheet\"";
-    response += "href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css\"";
-    response += "integrity=\"sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2\"";
-    response += "crossorigin=\"anonymous\"";
+    response += " rel=\"stylesheet\"";
+    response += " href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css\"";
+    response += " integrity=\"sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2\"";
+    response += " crossorigin=\"anonymous\"";
     response += "/>";
     response += "<link";
-    response += "href=\"https://fonts.googleapis.com/css?family=Source+Code+Pro\"";
-    response += "rel=\"stylesheet\"";
+    response += " href=\"https://fonts.googleapis.com/css?family=Source+Code+Pro\"";
+    response += " rel=\"stylesheet\"";
     response += "/>";
     response += "<link";
-    response += "rel=\"icon\"";
-    response += "type=\"image/png\"";
-    response += "href=\"https://cdn4.iconfinder.com/data/icons/iconsimple-setting-time/512/dashboard-512.png\"";
+    response += " rel=\"icon\"";
+    response += " type=\"image/png\"";
+    response += " href=\"https://cdn4.iconfinder.com/data/icons/iconsimple-setting-time/512/dashboard-512.png\"";
     response += "/>";
     response += "<style>";
     response += "* {";
@@ -325,7 +323,7 @@ string panel() {
     response += "}";
     response += "</style>";
     response += "</head>";
-    response += "<body class=\"bg-secondary pt-5\">\"";
+    response += "<body class=\"bg-secondary pt-5\">";
 
     response += "<form action=\"" + FORM_ACTION + "\" method=\"" + FORM_METHOD + "\">";
     response += "<table class=\"table mx-auto bg-light\" style=\"width: inherit\">";
