@@ -186,7 +186,7 @@ private:
         [this](boost::system::error_code ec) {
             if (!ec) {
                 if (file != "") {
-                    file = ".\\test_case\\" + file;
+                    file = "./test_case/" + file;
                     fin = ifstream(file.data());
                 }
                 memset(data_, '\0', 20480);
@@ -256,8 +256,7 @@ private:
 };
 
 
-class server
-{
+class server {
 public:
   server(boost::asio::io_context& io_context, short port)
    : acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)) {
@@ -472,6 +471,7 @@ void console(boost::asio::ip::tcp::socket& socket_) {
         if (session_list[i].host == "") {
             continue;
         }
+        // std::make_shared<client>(i, session_list[i].host, session_list[i].port, session_list[i].file, io_context, socket_)->start();
         client* c = new client(i, session_list[i].host, session_list[i].port, session_list[i].file, io_context, socket_);
         c->start();
     }

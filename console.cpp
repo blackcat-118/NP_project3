@@ -61,14 +61,15 @@ public:
     string file = "";
 } session_list[5];
 
-class client {
+class client : public std::enable_shared_from_this<client>{
 public:
     client(int sid, string host, string port, string file, boost::asio::io_context& io_context): sid(sid), host(host), port(port), file(file), resolver_(io_context), socket_(io_context){}
 
     void start() {
+        auto self(shared_from_this());
         boost::asio::ip::tcp::resolver::query query_(host, port);
         resolver_.async_resolve(query_, 
-        [this](boost::system::error_code ec, boost::asio::ip::tcp::resolver::results_type result) {
+        [this, self](boost::system::error_code ec, boost::asio::ip::tcp::resolver::results_type result) {
             endpoint_ = result;
             if (!ec) {
                 do_connect();
@@ -85,8 +86,9 @@ public:
     
 private:
     void do_connect() {
+        auto self(shared_from_this());
         socket_.async_connect(*(endpoint_.begin()), 
-        [this](boost::system::error_code ec) {
+        [this, self](boost::system::error_code ec) {
             if (!ec) {
                 //cout << "<script>document.getElementById(\"s" << sid << "\").innerHTML += \'<b>" << do_replace("connected\n") << "</b>\';</script>" << endl;
                 if (file != "") {
@@ -103,8 +105,9 @@ private:
         });
     }
     void do_read() {
+        auto self(shared_from_this());
         socket_.async_read_some(boost::asio::buffer(data_, max_length), 
-        [this](boost::system::error_code ec, std::size_t length) {
+        [this, self](boost::system::error_code ec, std::size_t length) {
             if (!ec) {
                 cout << "<script>document.getElementById(\"s" << sid << "\").innerHTML += \'<b>" << do_replace(data_, length) << "</b>\';</script>" << endl;
                 
@@ -116,25 +119,17 @@ private:
                     memset(data_, '\0', 20480);
                     do_read();
                 }
-
-                // if (fin.get(data_, 20480)) {
-                //     cout << "<script>document.getElementById(\"s" << sid << "\").innerHTML += \'<b>" << do_replace(data_, 0) << "</b>\';</script>" << endl << flush;
-                //     do_write();
-                // }
-                // else {
-                //     fin.close();
-                //     socket_.close();
-                // }
             }
         });
     }
     void do_write() {
+        auto self(shared_from_this());
         char cmd[20480] = "";
         if (fin.getline(cmd, 20480)) {
             cmd[strlen(cmd)] = '\n';
             cout << "<script>document.getElementById(\"s" << sid << "\").innerHTML += \'" << do_replace(cmd, 0) << "\';</script>" << endl;
             boost::asio::async_write(socket_, boost::asio::buffer(cmd, strlen(cmd)), 
-            [this](boost::system::error_code ec, std::size_t length) {
+            [this, self](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
                     do_read();
                 }
@@ -144,11 +139,6 @@ private:
             fin.close();
             socket_.close();
         }
-        
-        // cout << "<script>document.getElementById(" << "\'s" << sid << "\').innerHTML += " << do_replace(data_) << ";</script>" << endl;
-        // cout << "<h1>" << data_ << "</h1>" << endl;
-        // cout << flush;
-        // do_read();
     }
 
     int sid;
@@ -163,15 +153,13 @@ private:
 	char data_[max_length];
 };
 
-
 int main() {
-
     string requests = getenv("QUERY_STRING");
 
     boost::asio::io_context io_context;
 
-    size_t indx1 = 0;
-    size_t indx2 = 0;
+    std::size_t indx1 = 0;
+    std::size_t indx2 = 0;
 
     for (int i = 0; i < 5; i++) {
         indx1 = requests.find_first_of("=", indx1+1);
@@ -251,21 +239,18 @@ int main() {
         }
         cout << "  <td><pre id=\"s" << i << "\" class=\"mb-0\"></pre></td>" << endl;
     }
-    // cout << "  <td><pre id=\"s0\" class=\"mb-0\"></pre></td>" << endl;
-    // cout << "  <td><pre id=\"s1\" class=\"mb-0\"></pre></td>" << endl;
     cout << "</tr>" << endl;
     cout << "  </tbody>" << endl;
     cout << "</table>" << endl;
     cout << "  </body>" << endl;
     cout << "</html>" << endl;
-    //print();
     for (int i = 0; i < 5; i++) {
         if (session_list[i].host == "") {
             continue;
         }
-        //std::make_shared<client>(i, session_list[i].host, session_list[i].port, session_list[i].file, io_context)->start();
-        client* c = new client(i, session_list[i].host, session_list[i].port, session_list[i].file, io_context);
-        c->start();
+        std::make_shared<client>(i, session_list[i].host, session_list[i].port, session_list[i].file, io_context)->start();
+        // client* c = new client(i, session_list[i].host, session_list[i].port, session_list[i].file, io_context);
+        // c->start();
     }
     io_context.run();
 

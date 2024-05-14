@@ -18,30 +18,27 @@ using namespace std;
 vector<pair<string, string>> env_vars;
 string service_name;
 void Parser(string http_req) {
+    vector<string> parsed_req;
 
-  vector<string> parsed_req;
+    boost::split(parsed_req, http_req, boost::is_any_of(" \r\n"), boost::token_compress_on);
 
-  boost::split(parsed_req, http_req, boost::is_any_of(" \r\n"), boost::token_compress_on);
-  for (unsigned int i = 0; i < parsed_req.size(); i++) {
-    //cout << parsed_req[i] << endl;
-  }
-  env_vars[0].second = parsed_req[0];
-  env_vars[1].second = parsed_req[1];
-  size_t indx = parsed_req[1].find_first_of('?');
-  string query = "";
-  if (indx != string::npos) {
-    service_name = parsed_req[1].substr(1, indx-1);
-    query = parsed_req[1].substr(indx+1);
-  }
-  else {
-    service_name = parsed_req[1].substr(1);
-    //cout << service_name << endl;
-  }
-  env_vars[2].second = query;
-  env_vars[3].second = parsed_req[2];
-  env_vars[4].second = parsed_req[4];
-  
-  return;
+    env_vars[0].second = parsed_req[0];
+    env_vars[1].second = parsed_req[1];
+    size_t indx = parsed_req[1].find_first_of('?');
+    string query = "";
+    if (indx != string::npos) {
+      service_name = parsed_req[1].substr(1, indx-1);
+      query = parsed_req[1].substr(indx+1);
+    }
+    else {
+      service_name = parsed_req[1].substr(1);
+      //cout << service_name << endl;
+    }
+    env_vars[2].second = query;
+    env_vars[3].second = parsed_req[2];
+    env_vars[4].second = parsed_req[4];
+    
+    return;
 }
 
 class session
@@ -152,35 +149,35 @@ private:
 
 int main(int argc, char* argv[])
 {
-  try
-  {
-    if (argc != 2)
+    try
     {
-      std::cerr << "Usage: async_tcp_echo_server <port>\n";
-      return 1;
+        if (argc != 2)
+        {
+          std::cerr << "Usage: async_tcp_echo_server <port>\n";
+          return 1;
+        }
+
+        // set env
+        env_vars.push_back(pair<string, string>("REQUEST_METHOD", ""));
+        env_vars.push_back(pair<string, string>("REQUEST_URI", ""));
+        env_vars.push_back(pair<string, string>("QUERY_STRING", ""));
+        env_vars.push_back(pair<string, string>("SERVER_PROTOCOL", ""));
+        env_vars.push_back(pair<string, string>("HTTP_HOST", ""));
+        env_vars.push_back(pair<string, string>("SERVER_ADDR", ""));
+        env_vars.push_back(pair<string, string>("SERVER_PORT", ""));
+        env_vars.push_back(pair<string, string>("REMOTE_ADDR", ""));
+        env_vars.push_back(pair<string, string>("REMOTE_PORT", ""));
+
+        boost::asio::io_context io_context;
+
+        server s(io_context, std::atoi(argv[1]));
+
+        io_context.run();
+    }
+    catch (std::exception& e)
+    {
+      std::cerr << "Exception: " << e.what() << "\n";
     }
 
-    // set env
-    env_vars.push_back(pair<string, string>("REQUEST_METHOD", ""));
-    env_vars.push_back(pair<string, string>("REQUEST_URI", ""));
-    env_vars.push_back(pair<string, string>("QUERY_STRING", ""));
-    env_vars.push_back(pair<string, string>("SERVER_PROTOCOL", ""));
-    env_vars.push_back(pair<string, string>("HTTP_HOST", ""));
-    env_vars.push_back(pair<string, string>("SERVER_ADDR", ""));
-    env_vars.push_back(pair<string, string>("SERVER_PORT", ""));
-    env_vars.push_back(pair<string, string>("REMOTE_ADDR", ""));
-    env_vars.push_back(pair<string, string>("REMOTE_PORT", ""));
-
-    boost::asio::io_context io_context;
-
-    server s(io_context, std::atoi(argv[1]));
-
-    io_context.run();
-  }
-  catch (std::exception& e)
-  {
-    std::cerr << "Exception: " << e.what() << "\n";
-  }
-
-  return 0;
+    return 0;
 }
